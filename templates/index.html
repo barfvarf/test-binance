@@ -2,44 +2,31 @@
 {% block headtitle %}Index view{% endblock %}
 {% block content %}
 <div class="row">
-
-	<div class="col-sm-2">
+	<br>
+	<div class="table-responsive">
+		<table class="table table-hover table-striped" style="font-size: 1.5em;">
+			<tr class="active">
+				<td>Symbol:</td>
+				<td id="symbol"></td>
+			</tr>
+			<tr class="active">
+				<td>Price:</td>
+				<td id="price"></td>				
+			</tr>
+			<tr class="active">
+				<td>Trade Time:</td>
+				<td id="time"></td>				
+			</tr>
+		</table>
 	</div>
-	<div class="col-sm-2">
-		<h3>Symbol:</h3>
-	</div>
-	<div class="col-sm-2">
-		<h3 id="symbol">Symbol</h3>
-	</div>
-	<div class="col-sm-2">
-		<h3>Price:</h3>
-	</div>
-	<div class="col-sm-2">
-		<h3 id="price">Price</h3>
-	</div>
-	<div class="col-sm-2">
-	</div>
-</div>
 <div class="row">
-	<div class="col-sm-2">
-	</div>
-	<div class="col-sm-2">
-		<h3>Trade Time:</h3>
-	</div>
-	<div class="col-sm-3">
-		<h3 id="time">Time</h3>
-	</div>
-</div>
-<div class="row">
-	<div class="col-sm-2">
-	</div>
-	<div class="col-sm-2">
+	<div class="col-sm-4 text-center form-group">
 		<button class="btn btn-primary btn-lg" id="show_chart">Open chart</button>
 	</div>
-	<div class="col-sm-2">
+	<div class="col-sm-4 text-center form-group">
 		<button class="btn btn-danger btn-lg" id="close_chart">Close chart</button>
 	</div>
-	<div class="col-sm-2">
+	<div class="col-sm-4 text-center form-group">
 		<button class="btn"><a href="{{ channel_href }}"><img src="{{ url_for('static', filename='img/LogoBig_1x.png') }}"></a></button>
 	</div>
 </div>
