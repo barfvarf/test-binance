@@ -27,7 +27,7 @@ class IndexViewController(object):
     def call(self):
         self.get_socket()
 
-        return render_template("index.html")
+        return render_template("index.html", channel_href=config.channel_href)
 
     def get_socket(self):
         client = Client(config.api_key, config.api_secret)
