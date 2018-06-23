@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block headtitle %}Index view{% endblock %}
+{% block content %}
+<div class="row">
+
+	<div class="col-sm-2">
+	</div>
+	<div class="col-sm-2">
+		<h3>Symbol:</h3>
+	</div>
+	<div class="col-sm-2">
+		<h3 id="symbol">Symbol</h3>
+	</div>
+	<div class="col-sm-2">
+		<h3>Price:</h3>
+	</div>
+	<div class="col-sm-2">
+		<h3 id="price">Price</h3>
+	</div>
+	<div class="col-sm-2">
+	</div>
+</div>
+<div class="row">
+	<div class="col-sm-2">
+	</div>
+	<div class="col-sm-2">
+		<h3>Trade Time:</h3>
+	</div>
+	<div class="col-sm-3">
+		<h3 id="time">Time</h3>
+	</div>
+</div>
+<div class="row">
+	<div class="col-sm-2">
+	</div>
+	<div class="col-sm-2">
+		<button class="btn btn-primary btn-lg" id="show_chart">Open chart</button>
+	</div>
+	<div class="col-sm-2">
+		<button class="btn btn-danger btn-lg" id="close_chart">Close chart</button>
+	</div>
+	<div class="col-sm-2">
+		<button class="btn"><a href="{{ channel_href }}"><img src="{{ url_for('static', filename='img/LogoBig_1x.png') }}"></a></button>
+	</div>
+</div>
+<div class="row">
+	<div class="col-sm-12" id="chart_div" style="display: none;">
+		<canvas id="mainChart" width="900" height="500"></canvas>
+	</div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript" src="{{ url_for('static', filename='js/Chart.min.js') }}"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		var symbol = "BTCUSDT";
+		setInterval(getSymbolPrice, 1000, symbol);
+
+		function getSymbolPrice(symbol){
+			$.getJSON('/price/' + symbol, function(data){
+	        if((typeof(data) != "undefined") && (data.result !== null)) {
+	        	$("#symbol").text(data.result.symbol);
+	        	$("#price").text(data.result.price);
+	        	$("#time").text(data.result.time);
+	            };
+		    });
+		};
+		var chart_interval = null;
+		$("#show_chart").click(function(){
+			chart_interval = setInterval(getChartData, 1000, symbol);
+			$("#chart_div").show();
+		});
+		$("#close_chart").click(function(){
+			if(chart_interval){
+				clearInterval(chart_interval);
+			}
+			$("#chart_div").hide();
+		});
+
+		function getChartData(symbol){
+			$.getJSON('/chart/' + symbol, function(resp){
+	        var chart_div = $("#chart_div");
+	        chart_div.empty();
+	        var canvas = $("<canvas />", { id: "mainChart"});
+	        chart_div.append(canvas);
+	        if((typeof(resp) != "undefined") && (resp.result !== null)) {
+	        	var ctx = $("#mainChart");
+			    var data = {
+			      labels: resp.result.labels,      
+			      datasets: [
+			          {
+			              label: resp.result.symbol,
+			              backgroundColor: "rgba(128, 128, 128, 0.2)",
+			              borderColor: "rgba(128, 128, 128, 1)",
+			              pointColor: "rgba(128, 128, 128, 1)",
+			              pointStrokeColor: "#fff",
+			              pointHighlightFill: "#fff",
+			              pointHighlightStroke: "rgba(128, 128, 128, 1)",
+			              data: resp.result.data,
+			              pointRadius: 2,
+			              pointHoverRadius: 3
+			          },
+			      ]      
+			    };
+			    var lineChart = new Chart(ctx, {
+			      type: "line",
+			      data: data,
+			      options: {
+			      	bezierCurve: false,
+			      	hover: {mode: null},
+			        tooltips: {mode: "label"},
+			        animation: false,
+			        scales:{
+			          yAxes: [{ ticks: { suggestedMin: resp.result.min, suggestedMax: resp.result.max}}]
+			        }
+			      }
+
+	            });
+		    };
+		});
+	};
+	});
+</script>
+{% endblock %}
