@@ -16,6 +16,7 @@ from models import PriceLog
 
 buffer_dict = OrderedDict()
 allowed_symbols = ["BTCUSDT"]
+registered_drops = []
 
 
 class IndexViewController(object):
@@ -54,13 +55,13 @@ class IndexViewController(object):
         prices = [p.get("price") for p in buffer_dict.values()]
         if prices:
             max_price = max(prices)
-            min_price = min(prices)
-            if prices.index(max_price) < prices.index(min_price):
-                drop_percent = (float(max_price) - float(min_price)) / float(max_price)
-                if drop_percent > config.percent_threshhold:
-                    self.send_notification(symbol, max_price, min_price, "{:.2%}".format(drop_percent))
-                    PriceLog.create(symbol=symbol, max_price=max_price,
-                                    min_price=min_price, drop_percent=round(drop_percent * 100, 2))
+            min_price = min(prices[prices.index(max_price):])
+            drop_percent = (float(max_price) - float(min_price)) / float(max_price)
+            if drop_percent > config.percent_threshhold and drop_percent not in registered_drops:
+                self.send_notification(symbol, max_price, min_price, "{:.2%}".format(drop_percent))
+                PriceLog.create(symbol=symbol, max_price=max_price,
+                                min_price=min_price, drop_percent=round(drop_percent * 100, 2))
+                registered_drops.append(drop_percent)
 
     def send_notification(self, symbol, max_price, min_price, drop_percent):
         text = ("In the last %s seconds the price of %s has dropped by *%s* from %s to %s" %
@@ -114,3 +115,15 @@ class GetChartDataController(object):
                   "min": float(min(data)) - 10,
                   "max": float(max(data)) + 10}
         return json.dumps({"result": result})
+
+
+class ClearRegisteredDropsController(object):
+    """Clears registered drops list"""
+
+    def __init__(self):
+        self.log = Log(file_handler, self.__class__.__name__)
+
+    def call(self):
+        self.log.info("Clearing registered drops %s" % registered_drops)
+        registered_drops.clear()
+        return "Drops cleared."

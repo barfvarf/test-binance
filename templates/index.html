@@ -45,6 +45,7 @@
 	$(document).ready(function() {
 		var symbol = "BTCUSDT";
 		setInterval(getSymbolPrice, 1000, symbol);
+		setInterval(clearDrops, 35000, symbol);
 
 		function getSymbolPrice(symbol){
 			$.getJSON('/price/' + symbol, function(data){
@@ -66,6 +67,10 @@
 			}
 			$("#chart_div").hide();
 		});
+
+		function clearDrops(){
+			$.get('/clear_drops');
+		}
 
 		function getChartData(symbol){
 			$.getJSON('/chart/' + symbol, function(resp){
