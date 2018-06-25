@@ -127,6 +127,6 @@ class ClearRegisteredDropsController(object):
     def call(self):
         if (time() - registered_drops.get("last_clear_time")) > config.timeframe:
             self.log.info("Clearing registered drops %s" % registered_drops)
-            registered_drops.clear()
+            registered_drops.get("drops", []).clear()
             return "Drops cleared."
         return "Drops clearing skipped."
