@@ -44,10 +44,9 @@ class IndexViewController(object):
         symbol = msg.get("s")
         price = "%.2f" % float(msg.get("p"))
         buffer_dict.update({dt: {"symbol": symbol, "price": price}})
-        last_trade_time = max(buffer_dict)
         delete_keys = []
         for k in buffer_dict.keys():
-            if (last_trade_time - k).seconds > config.timeframe:
+            if (dt - k).seconds > config.timeframe or (datetime.now() - k).seconds > config.timeframe:
                 delete_keys.append(k)
         if delete_keys:
             for k in delete_keys:
@@ -58,7 +57,8 @@ class IndexViewController(object):
             max_price = max(prices)
             min_price = min(prices[prices.index(max_price):])
             drop_percent = (float(max_price) - float(min_price)) / float(max_price)
-            if drop_percent > config.percent_threshhold and drop_percent not in registered_drops.get("drops", []):
+            if (drop_percent > config.percent_threshhold and drop_percent not in registered_drops.get("drops", [])
+                and datetime.now() - dt).seconds < 5):
                 self.send_notification(symbol, max_price, min_price, "{:.2%}".format(drop_percent))
                 PriceLog.create(symbol=symbol, max_price=max_price,
                                 min_price=min_price, drop_percent=round(drop_percent * 100, 2))
@@ -72,7 +72,8 @@ class IndexViewController(object):
                                                    text=str(text),
                                                    parse_mode=config.parse_mode))])
 
-        response = requests.get(url, timeout=60)
+        response = requests.get(url, timeout=5)
+        self.log.info("Telegram took %s seconds." % response.elapsed.total_seconds())
         if response.status_code == 200:
             self.log.info("Sent notification to channel %s: %s" % (config.chat_id, text))
         else:
@@ -129,6 +130,6 @@ class ClearRegisteredDropsController(object):
         if (now - registered_drops.get("last_clear_time")) > config.timeframe:
             self.log.info("Clearing registered drops %s" % registered_drops)
             registered_drops.get("drops", []).clear()
-            registered_drops.get("last_clear_time") = now
+            registered_drops["last_clear_time"] = now
             return "Drops cleared."
         return "Drops clearing skipped."
