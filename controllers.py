@@ -10,13 +10,14 @@ from binance.client import Client
 from binance.websockets import BinanceSocketManager
 from collections import OrderedDict
 from datetime import datetime
+from time import time
 from bintest import file_handler
 from models import PriceLog
 
 
 buffer_dict = OrderedDict()
 allowed_symbols = ["BTCUSDT"]
-registered_drops = []
+registered_drops = {"last_clear_time": time(), "drops": []}
 
 
 class IndexViewController(object):
@@ -57,11 +58,11 @@ class IndexViewController(object):
             max_price = max(prices)
             min_price = min(prices[prices.index(max_price):])
             drop_percent = (float(max_price) - float(min_price)) / float(max_price)
-            if drop_percent > config.percent_threshhold and drop_percent not in registered_drops:
+            if drop_percent > config.percent_threshhold and drop_percent not in registered_drops.get("drops", []):
                 self.send_notification(symbol, max_price, min_price, "{:.2%}".format(drop_percent))
                 PriceLog.create(symbol=symbol, max_price=max_price,
                                 min_price=min_price, drop_percent=round(drop_percent * 100, 2))
-                registered_drops.append(drop_percent)
+                registered_drops.get("drops", []).append(drop_percent)
 
     def send_notification(self, symbol, max_price, min_price, drop_percent):
         text = ("In the last %s seconds the price of %s has dropped by *%s* from %s to %s" %
@@ -124,6 +125,8 @@ class ClearRegisteredDropsController(object):
         self.log = Log(file_handler, self.__class__.__name__)
 
     def call(self):
-        self.log.info("Clearing registered drops %s" % registered_drops)
-        registered_drops.clear()
-        return "Drops cleared."
+        if (time() - registered_drops.get("last_clear_time")) > config.timeframe:
+            self.log.info("Clearing registered drops %s" % registered_drops)
+            registered_drops.clear()
+            return "Drops cleared."
+        return "Drops clearing skipped."
