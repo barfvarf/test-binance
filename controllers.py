@@ -10,14 +10,13 @@ from binance.client import Client
 from binance.websockets import BinanceSocketManager
 from collections import OrderedDict
 from datetime import datetime
-from time import time
 from bintest import file_handler
 from models import PriceLog
 
 
 buffer_dict = OrderedDict()
 allowed_symbols = ["BTCUSDT"]
-registered_drops = {"last_clear_time": time(), "drops": []}
+registered_drops = {"last_clear_time": datetime.now(), "drops": []}
 
 
 class IndexViewController(object):
@@ -126,8 +125,16 @@ class ClearRegisteredDropsController(object):
         self.log = Log(file_handler, self.__class__.__name__)
 
     def call(self):
-        now = time()
-        if (now - registered_drops.get("last_clear_time")) > config.timeframe:
+        now = datetime.now()
+        delete_keys = []
+        for k in buffer_dict.keys():
+            if (now - k).seconds > config.timeframe:
+                delete_keys.append(k)
+        if delete_keys:
+            for k in delete_keys:
+                del buffer_dict[k]
+            self.log.info("Deleted keys: %s" % delete_keys)
+        if (now - registered_drops.get("last_clear_time")).seconds > config.timeframe + 2:
             self.log.info("Clearing registered drops %s" % registered_drops)
             registered_drops.get("drops", []).clear()
             registered_drops["last_clear_time"] = now
