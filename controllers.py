@@ -125,8 +125,10 @@ class ClearRegisteredDropsController(object):
         self.log = Log(file_handler, self.__class__.__name__)
 
     def call(self):
-        if (time() - registered_drops.get("last_clear_time")) > config.timeframe:
+        now = time()
+        if (now - registered_drops.get("last_clear_time")) > config.timeframe:
             self.log.info("Clearing registered drops %s" % registered_drops)
             registered_drops.get("drops", []).clear()
+            registered_drops.get("last_clear_time") = now
             return "Drops cleared."
         return "Drops clearing skipped."
